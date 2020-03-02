@@ -1,0 +1,16 @@
+[package]
+name = "shachiku"
+version = "0.1.0"
+authors = ["Jackson Ming Hu <huming2207@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+diesel = { version = "1.4.2", features = ["postgres", "r2d2", "chrono"] }
+dotenv = "0.15.0"
+actix-web = "2"
+actix-rt = "1"
+serde = {version = "1.0", features = ["derive"] }
+web_ical = "0.1.0"
+jsonwebtoken = "7.1.0"
