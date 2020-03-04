@@ -7,12 +7,8 @@ pub struct User {
     pub username: String,
     pub email: String,
     pub password: String,
-    pub bio: String
+    pub realname: String,
+    pub bio: String,
 }
 
-impl User {
-    pub fn find_user_with_username(username: &str, conn: &dyn Connection) -> QueryResult<User> {
-
-    }
-}
 

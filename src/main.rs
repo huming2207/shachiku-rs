@@ -13,33 +13,23 @@ extern crate jsonwebtoken;
 extern crate uuid;
 extern crate bcrypt;
 
+pub mod app;
 pub mod model;
+pub mod service;
+pub mod controller;
 
 use std::env;
 use actix_web::{get, App, HttpServer, Responder, web};
-use r2d2_mongodb::{MongodbConnectionManager, ConnectionOptions};
-use r2d2::Pool;
-
-
-#[get("/{id}/{name}/index.html")]
-async fn index(info: web::Path<(u32, String)>) -> impl Responder {
-    format!("Hello {}! id:{}", info.1, info.0)
-}
+use mongodb::{Client, options::ClientOptions};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    let dbManager = MongodbConnectionManager::new(
-    ConnectionOptions::builder()
-                .with_host(env::var("MONGO_HOST").unwrap().as_str(),
-                           env::var("MONGO_PORT").unwrap().parse::<u16>().unwrap())
-                .with_db(env::var("MONGO_DBNAME").unwrap().as_str()).build()
+    let db_option = ClientOptions::parse(env::var("MONGO_DB_URI").unwrap().as_str()).unwrap();
+    let db_client = Client::with_options(db_option).unwrap();
+    let db_database = db_client.database(env::var("MONGO_DB_NAME").unwrap().as_str());
 
-    );
-
-    let pool = Pool::builder().max_size(10).build(manager).unwrap();
-
-    HttpServer::new(|| App::new().service(index))
+    HttpServer::new(|| App::new().data(db_database.clone()).configure(app::load_services))
         .bind("127.0.0.1:8080")?
         .run()
         .await
