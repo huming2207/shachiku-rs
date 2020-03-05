@@ -19,6 +19,8 @@ web_ical = "0.1.0"
 jsonwebtoken = "7.1.0"
 log = "0.4.8"
 bcrypt = "0.6.1"
+validator = "0.10"
+validator_derive = "0.10"
 
 [dependencies.chrono]
 version = "0.4.10"
