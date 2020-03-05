@@ -27,7 +27,7 @@ use mongodb::{Client, options::ClientOptions};
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
+    dotenv::dotenv().ok();
     let db_option = ClientOptions::parse(env::var("MONGO_DB_URI").unwrap().as_str()).unwrap();
     let db_client = Client::with_options(db_option).unwrap();
     let db_database = db_client.database(env::var("MONGO_DB_NAME").unwrap().as_str());
