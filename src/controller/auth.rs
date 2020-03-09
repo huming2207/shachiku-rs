@@ -32,37 +32,41 @@ pub fn register(
         Ok(_) => (),
         Err(error) => {
             return HttpResponse::BadRequest()
-                    .json(ResponseBody::new("Invalid content submitted", error).to_json());
+                    .json(ResponseBody::new("Invalid content submitted", error));
         }
     }
 
     let collection = db.collection(constant::MONGO_COLL_USER);
-    return if collection.find_one(doc! {"username": new_user.username}, None).is_err() {
+    return if collection.find_one(doc! {"username": new_user.username.clone()}, None).is_err() {
         let user = User {
             id: None,
-            username: new_user.username.to_owned(),
-            email: new_user.email.to_owned(),
+            username: new_user.username.clone(),
+            email: new_user.email.clone(),
             password: User::set_password(new_user.password.as_ref()),
             realname: None,
             bio: None
         };
 
         let user_bson = bson::to_bson(&user).unwrap();
-
-        let ret = collection.insert_one(user_bson, None);
-        match ret {
-            Ok(inserted) => {
-                HttpResponse::Ok()
-                    .json(ResponseBody::new("ok", inserted).to_json())
-            },
-            Err(error) => {
-                HttpResponse::InternalServerError()
-                    .json(ResponseBody::new("Failed to create user", error).to_json())
+        if let bson::Bson::Document(document) = user_bson {
+            let ret = collection.insert_one(document, None);
+            match ret {
+                Ok(inserted) => {
+                    HttpResponse::Ok()
+                        .json(ResponseBody::new("User created", constant::EMPTY))
+                },
+                Err(error) => {
+                    HttpResponse::InternalServerError()
+                        .json(ResponseBody::new("Failed when saving user to database", constant::EMPTY))
+                }
             }
+        } else {
+            HttpResponse::InternalServerError()
+                .json(ResponseBody::new("Failed to serialize user", constant::EMPTY))
         }
     } else {
         HttpResponse::NotAcceptable()
-            .json(ResponseBody::new("User already exist", constant::EMPTY).to_json())
+            .json(ResponseBody::new("User already exist", constant::EMPTY))
     }
 }
 
@@ -76,12 +80,12 @@ pub async fn login(
         Ok(_) => (),
         Err(error) => {
             return HttpResponse::BadRequest()
-                .json(ResponseBody::new("Invalid content submitted", error).to_json());
+                .json(ResponseBody::new("Invalid content submitted", error));
         }
     }
 
     let collection = db.collection(constant::MONGO_COLL_USER);
-    let find_ret = collection.find_one(doc! {"username": new_user.username}, None);
+    let find_ret = collection.find_one(doc! {"username": login_user.username}, None);
     return match find_ret {
         Ok(ret) => {
             match ret {
@@ -91,27 +95,27 @@ pub async fn login(
                             let user: User = result;
                             if user.compare_password(login_user.password.as_str()) {
                                 HttpResponse::Ok()
-                                    .json(ResponseBody::new("ok (todo JWT)", "").to_json())
+                                    .json(ResponseBody::new("ok (todo JWT)", ""))
                             } else {
                                 HttpResponse::NotFound()
-                                    .json(ResponseBody::new("User not found", "").to_json())
+                                    .json(ResponseBody::new("User not found", ""))
                             }
                         },
                         Err(error) => {
                             HttpResponse::InternalServerError()
-                                .json(ResponseBody::new("Invalid user returned from database", error).to_json())
+                                .json(ResponseBody::new("Invalid user returned from database", error.to_string()))
                         }
                     }
                 },
                 None => {
                     HttpResponse::NotFound()
-                        .json(ResponseBody::new("User not found", error).to_json())
+                        .json(ResponseBody::new("User not found", constant::EMPTY))
                 }
             }
         },
         Err(error) => {
-            HttpResponse::NotFound()
-                .json(ResponseBody::new("User not found", error).to_json())
+            HttpResponse::InternalServerError()
+                .json(ResponseBody::new("Failed to find user", constant::EMPTY))
         }
     }
 }
