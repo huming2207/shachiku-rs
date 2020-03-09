@@ -35,7 +35,7 @@ async fn main() -> std::io::Result<()> {
     let db_database = db_client.database(env::var(constant::MONGO_DB_NAME).unwrap().as_str());
 
     HttpServer::new(move || App::new().data(db_database.clone()).configure(app::load_services))
-        .bind("127.0.0.1:8080")?
+        .bind(env::var(constant::LISTEN_ADDR).unwrap().as_str())?
         .run()
         .await
 }
