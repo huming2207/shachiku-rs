@@ -14,8 +14,4 @@ impl<T> ResponseBody<T> {
             data,
         }
     }
-
-    pub fn to_json(&self) -> String {
-        return serde_json::to_string(self).unwrap();
-    }
 }

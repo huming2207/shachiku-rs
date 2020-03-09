@@ -17,14 +17,12 @@ pub struct User {
 
 impl User {
     pub fn set_password(raw_passwd: &str) -> String {
-        let salt = env::var(constant::PASSWORD_SALT).unwrap().as_str();
+        let salt = env::var(constant::PASSWORD_SALT).unwrap();
         let config = Config::default();
-        return argon2::hash_encoded(raw_passwd.as_ref(), salt.as_ref(), &config).unwrap().to_string();
+        return argon2::hash_encoded(raw_passwd.as_ref(), salt.as_ref(), &config).unwrap();
     }
 
     pub fn compare_password(&self, raw_passwd: &str) -> bool {
-        let salt = env::var(constant::PASSWORD_SALT).unwrap().as_str();
-        let config = Config::default();
-        return argon2::verify_encoded(self.password.to_str(), raw_passwd.as_ref()).unwrap();
+        return argon2::verify_encoded(self.password.as_str(), raw_passwd.as_ref()).unwrap();
     }
 }
