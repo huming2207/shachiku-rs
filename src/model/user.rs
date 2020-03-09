@@ -7,24 +7,24 @@ use crate::constant;
 #[derive(Serialize, Deserialize)]
 pub struct User {
     #[serde(rename = "_id")]
-    pub id: bson::oid::ObjectId,
+    pub id: Option<bson::oid::ObjectId>,
     pub username: String,
     pub email: String,
     pub password: String,
-    pub realname: String,
-    pub bio: String,
+    pub realname: Option<String>,
+    pub bio: Option<String>,
 }
 
 impl User {
-    pub fn set_password(&mut self, raw_passwd: &str) {
+    pub fn set_password(raw_passwd: &str) -> String {
         let salt = env::var(constant::PASSWORD_SALT).unwrap().as_str();
         let config = Config::default();
-        self.password = argon2::hash_encoded(raw_passwd, salt, &config).unwrap();
+        return argon2::hash_encoded(raw_passwd.as_ref(), salt.as_ref(), &config).unwrap().to_string();
     }
 
-    pub fn compare_password(&mut self, raw_passwd: &str) -> bool {
+    pub fn compare_password(&self, raw_passwd: &str) -> bool {
         let salt = env::var(constant::PASSWORD_SALT).unwrap().as_str();
         let config = Config::default();
-        return argon2::verify_encoded(self.password.to_str(), raw_passwd).unwrap();
+        return argon2::verify_encoded(self.password.to_str(), raw_passwd.as_ref()).unwrap();
     }
 }
