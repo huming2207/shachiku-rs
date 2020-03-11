@@ -45,7 +45,7 @@ pub fn register(
                 },
                 None => {
                     let user = User {
-                        id: None,
+                        id: bson::oid::ObjectId::new().unwrap(),
                         username: new_user.username.clone(),
                         email: new_user.email.clone(),
                         password: User::set_password(new_user.password.as_ref()),
