@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResponseBody<T> {
