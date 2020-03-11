@@ -1,10 +1,8 @@
 use crate::model::user::User;
-use serde_json::json;
 use actix_web::{web, HttpResponse, http, Error, error};
 use serde::{Deserialize, Serialize};
-use validator::{Validate};
-use validator_derive;
-use bson::{doc, encode_document, Bson, Document};
+use validator::{Validate, ValidationErrors};
+use bson::{doc, Document};
 use crate::constant;
 use crate::model::response_body::ResponseBody;
 
@@ -27,7 +25,7 @@ pub fn register(
     db: web::Data<mongodb::Database>
 ) -> HttpResponse {
     let new_user = user_form.into_inner();
-    let validate_ret = new_user.validate();
+    let validate_ret: Result<(), ValidationErrors> = new_user.validate();
     match validate_ret {
         Ok(_) => (),
         Err(error) => {
@@ -37,36 +35,48 @@ pub fn register(
     }
 
     let collection = db.collection(constant::MONGO_COLL_USER);
-    return if collection.find_one(doc! {"username": new_user.username.clone()}, None).is_err() {
-        let user = User {
-            id: None,
-            username: new_user.username.clone(),
-            email: new_user.email.clone(),
-            password: User::set_password(new_user.password.as_ref()),
-            realname: None,
-            bio: None
-        };
-
-        let user_bson = bson::to_bson(&user).unwrap();
-        if let bson::Bson::Document(document) = user_bson {
-            let ret = collection.insert_one(document, None);
+    let find_ret = collection.find_one(doc! {"username": new_user.username.clone()}, None);
+    return match find_ret {
+        Ok(ret) => {
             match ret {
-                Ok(inserted) => {
-                    HttpResponse::Ok()
-                        .json(ResponseBody::new("User created", constant::EMPTY))
+                Some(result_doc) => {
+                    HttpResponse::NotAcceptable()
+                        .json(ResponseBody::new("User already exist", constant::EMPTY))
                 },
-                Err(error) => {
-                    HttpResponse::InternalServerError()
-                        .json(ResponseBody::new("Failed when saving user to database", constant::EMPTY))
+                None => {
+                    let user = User {
+                        id: None,
+                        username: new_user.username.clone(),
+                        email: new_user.email.clone(),
+                        password: User::set_password(new_user.password.as_ref()),
+                        realname: None,
+                        bio: None
+                    };
+
+                    let user_bson = bson::to_bson(&user).unwrap();
+                    if let bson::Bson::Document(document) = user_bson {
+                        let ret = collection.insert_one(document, None);
+                        match ret {
+                            Ok(inserted) => {
+                                HttpResponse::Ok()
+                                    .json(ResponseBody::new("User created", constant::EMPTY))
+                            },
+                            Err(error) => {
+                                HttpResponse::InternalServerError()
+                                    .json(ResponseBody::new("Failed when saving user to database", constant::EMPTY))
+                            }
+                        }
+                    } else {
+                        HttpResponse::InternalServerError()
+                            .json(ResponseBody::new("Failed to serialize user", constant::EMPTY))
+                    }
                 }
             }
-        } else {
+        },
+        Err(error ) => {
             HttpResponse::InternalServerError()
-                .json(ResponseBody::new("Failed to serialize user", constant::EMPTY))
+                .json(ResponseBody::new("Failed to check user existence", constant::EMPTY))
         }
-    } else {
-        HttpResponse::NotAcceptable()
-            .json(ResponseBody::new("User already exist", constant::EMPTY))
     }
 }
 
