@@ -7,7 +7,7 @@ use crate::constant;
 #[derive(Serialize, Deserialize)]
 pub struct User {
     #[serde(rename = "_id")]
-    pub id: Option<bson::oid::ObjectId>,
+    pub id: bson::oid::ObjectId,
     pub username: String,
     pub email: String,
     pub password: String,
