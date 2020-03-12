@@ -29,6 +29,7 @@ pub fn register(
     match validate_ret {
         Ok(_) => (),
         Err(error) => {
+            info!("Invalid content submitted: {}", error);
             return HttpResponse::BadRequest()
                     .json(ResponseBody::new("Invalid content submitted", error));
         }
@@ -62,6 +63,7 @@ pub fn register(
                                     .json(ResponseBody::new("User created", constant::EMPTY))
                             },
                             Err(error) => {
+                                error!("Failed when saving user to database: {}", error);
                                 HttpResponse::InternalServerError()
                                     .json(ResponseBody::new("Failed when saving user to database", constant::EMPTY))
                             }
@@ -74,6 +76,7 @@ pub fn register(
             }
         },
         Err(error ) => {
+            error!("Failed to check user existence: {}", error);
             HttpResponse::InternalServerError()
                 .json(ResponseBody::new("Failed to check user existence", constant::EMPTY))
         }
