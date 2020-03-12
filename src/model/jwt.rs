@@ -42,7 +42,7 @@ impl JwtClaims {
                                         &Validation::default()
         );
         return match token {
-            Ok(_) => true,
+            Ok(claim) => claim.claims.expires < Utc::now(),
             Err(_) => false
         }
     }
