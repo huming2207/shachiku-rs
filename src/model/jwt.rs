@@ -5,7 +5,7 @@ use bson::oid::ObjectId;
 use std::env;
 use crate::common::constant;
 use actix_web::dev::ServiceRequest;
-use actix_web_httpauth::extractors::bearer::BearerAuth;
+use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
 use actix_web::Error;
 use actix_web_httpauth::extractors::AuthenticationError;
 
@@ -24,13 +24,15 @@ impl JwtClaims {
     }
 
     pub fn generate_token(&self) -> String {
-        let secret = env::var(constant::JWT_SECRET).unwrap().as_bytes();
-        return encode(&Header::default(), self, &EncodingKey::from_secret(secret))?;
+        return encode(&Header::default(), self, &EncodingKey::from_secret(env::var(constant::JWT_SECRET).unwrap().as_bytes().clone())).unwrap();
     }
 
     pub fn is_token_valid(token: &str) -> bool {
-        let secret = env::var(constant::JWT_SECRET).unwrap().as_bytes();
-        let token = decode::<JwtClaims>(token, &DecodingKey::from_secret(secret), &Validation::default());
+        let token = decode::<JwtClaims>(token,
+                                        &DecodingKey::from_secret(
+                                            env::var(constant::JWT_SECRET).unwrap().as_bytes()),
+                                        &Validation::default()
+        );
         return match token {
             Ok(_) => true,
             Err(_) => false
@@ -41,10 +43,14 @@ impl JwtClaims {
         req: ServiceRequest,
         credentials: BearerAuth
     ) -> Result<ServiceRequest, Error> {
-        if is_token_valid(credentials.token()) {
+        if Self::is_token_valid(credentials.token()) {
             Ok(req)
         } else {
-            Err(AuthenticationError::new("Unauthorised request, invalid JWT provided"));
+            let config = req.app_data::<Config>()
+                .map(|data| data.get_ref().clone())
+                .unwrap_or_else(Default::default)
+                .scope("");
+            Err(AuthenticationError::from(config).into())
         }
     }
 }
