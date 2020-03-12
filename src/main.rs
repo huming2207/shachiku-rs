@@ -31,7 +31,7 @@ use log::Level;
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=info");
+    std::env::set_var("RUST_LOG", "info");
     env_logger::init();
     dotenv::dotenv().ok();
     let db_option = ClientOptions::parse(env::var(constant::MONGO_DB_HOST).unwrap().as_str()).unwrap();
