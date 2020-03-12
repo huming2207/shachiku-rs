@@ -8,21 +8,26 @@ use actix_web::dev::ServiceRequest;
 use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
 use actix_web::Error;
 use actix_web_httpauth::extractors::AuthenticationError;
-use std::time::{SystemTime, UNIX_EPOCH};
+use chrono::{DateTime, Utc, Duration};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JwtClaims {
     pub uid: bson::oid::ObjectId,
+    pub username: String,
     pub email: String,
-    pub created: u64,
+    pub created: DateTime<Utc>,
+    pub expires: DateTime<Utc>
 }
 
 impl JwtClaims {
     pub fn new(user: &User) -> Self {
+        let expire_minutes = env::var(constant::JWT_EXPIRE_MIN).unwrap().parse::<i64>().unwrap();
         return JwtClaims {
             uid: user.id.clone(),
+            username: user.email.clone(),
             email: user.email.clone(),
-            created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+            created: Utc::now(),
+            expires: Utc::now() + Duration::minutes(expire_minutes),
         }
     }
 
