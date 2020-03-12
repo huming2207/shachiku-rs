@@ -38,10 +38,13 @@ async fn main() -> std::io::Result<()> {
     let db_client = Client::with_options(db_option).unwrap();
     let db_database = db_client.database(env::var(constant::MONGO_DB_NAME).unwrap().as_str());
 
+    let serv_addr = env::var(constant::LISTEN_ADDR).unwrap().as_str();
+    info!("Server started at {}", serv_addr);
+
     HttpServer::new(move || App::new()
         .wrap(Logger::default())
         .data(db_database.clone()).configure(app::load_services))
-        .bind(env::var(constant::LISTEN_ADDR).unwrap().as_str())?
+        .bind(serv_addr)?
         .run()
         .await
 }
