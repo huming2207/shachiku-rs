@@ -5,6 +5,7 @@ use validator::{Validate, ValidationErrors};
 use bson::{doc, Document};
 use crate::constant;
 use crate::model::response_body::ResponseBody;
+use crate::model::jwt::JwtClaims;
 
 #[derive(Deserialize, Serialize, Validate)]
 pub struct AuthUser {
@@ -107,8 +108,9 @@ pub async fn login(
                         Ok(result) => {
                             let user: User = result;
                             if user.compare_password(login_user.password.as_str()) {
+                                let claims = JwtClaims::new(&user);
                                 HttpResponse::Ok()
-                                    .json(ResponseBody::new("ok (todo JWT)", ""))
+                                    .json(ResponseBody::new("Authorised", claims.generate_token()))
                             } else {
                                 HttpResponse::NotFound()
                                     .json(ResponseBody::new("User not found", ""))

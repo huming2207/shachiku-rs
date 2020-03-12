@@ -8,18 +8,21 @@ use actix_web::dev::ServiceRequest;
 use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
 use actix_web::Error;
 use actix_web_httpauth::extractors::AuthenticationError;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JwtClaims {
-    uid: bson::oid::ObjectId,
-    email: String,
+    pub uid: bson::oid::ObjectId,
+    pub email: String,
+    pub created: u64,
 }
 
 impl JwtClaims {
     pub fn new(user: &User) -> Self {
         return JwtClaims {
             uid: user.id.clone(),
-            email: user.email.clone()
+            email: user.email.clone(),
+            created: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
         }
     }
 
